@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils_3d/control_utils_3d.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+
+</head>
+
+<body>
+    <div class="overlay">
+        <div class="btn_area">
+            <p class="ttl">結果</p>
+            <p id = result></p>
+            <button>スクワットを始める</button>
+        </div>
+    </div>
+    
+  <div class="container">
+    <video hidden class="input_video"></video><!--入力映像-->
+    <canvas class="output_canvas" width="1280px" height="720px"></canvas> <!--描画するキャンパス-->
+    <!--<div class="landmark-grid-container"></div>-->
+    <button id="fin" class="fin" >20mカウント</button>
+  </div>
+  
+</div>
+</body>
+</html>
+<style>
+     .overlay {
+            display: none;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            position: fixed;
+            z-index: 1;
+        }
+
+        .btn_area {
+            width: 400px;
+            height: 250px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            text-align: center;
+            z-index: 2
+        }
+
+
+        .btn_area .ttl {
+            font-weight: bold
+        }
+
+        .btn_area p {
+            padding: 15px;
+            color: red;
+        }
+
+        .btn_area button {
+            display: block;
+            margin: 0 auto;
+            background: #333;
+            color: #fff;
+            padding: 10px 40px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn_area button:hover {
+            background: #777
+        }
+</style>
+
+<script type="module">
+    const videoElement = document.getElementsByClassName('input_video')[0];
+    const canvasElement = document.getElementsByClassName('output_canvas')[0];
+    const canvasCtx = canvasElement.getContext('2d');
+    const landmarkContainer = document.getElementsByClassName('landmark-grid-container')[0];
+    //const grid = new LandmarkGrid(landmarkContainer);
+
+     /**取得したい角度のポイント
+         * もちろん真ん中が原点となるポイントになるように書いてね
+         * 関節スコアの参照 -> https://google.github.io/mediapipe/solutions/pose.html#pose-landmark-model-blazepose-ghum-3d
+        */
+        const needVector = {
+            "rightUde":[12,14,16],
+            "leftUde":[11,13,15],
+            // "rightHip": [12, 24, 26],
+            // "leftHip": [11, 23, 25],
+            // "rightKnee": [24, 26, 28],
+            // "leftKnee": [23, 25, 27],
+            // "rightAnkle": [26, 28, 32],
+            // "leftAnkle": [25, 27, 31],
+            // "rightHeel": [28, 30, 32],
+            // "leftHeel": [27, 29, 31],
+        };
+
+    //ボタンを押したらカウントスタート
+    const finButton = document.getElementById('fin');
+        finButton.addEventListener('click', function () {
+            countStart();
+            //20m後にカウント終了
+            setTimeout(function () {
+                countStop();
+                document.getElementsByClassName("overlay")[0].style.display = "block";
+            }, 20000);
+
+        });
+
+
+    //後々変更するものはletで宣言しておく
+    //変更しないものはconstで宣言しておく
+    let countData = {
+        "flg":false,
+        "startTime": 0,
+        "endTime": 0,
+        "frame": 0,
+        "arms_extended": 0,
+    };
+
+    const countStart = () => {
+        //カウント開始
+        console.log("カウント開始");
+        countData.flg = true;
+        countData.startTime = Date.now();
+    }
+
+    const countStop = () =>{
+        //カウント終了
+        console.log("カウント終了");
+        countData.flg = false;
+        countData.endTime = Date.now();
+
+        //カウント結果を表示
+        document.getElementById("result").innerHTML = "カウント結果は"+Math,round((countData.arms_extended/countData.frame)*100)+"%です";
+        console.log("カウント結果",countData);
+        //カウント結果を表示するオーバーレイを表示
+        const finButton = document.getElementById('fin');
+
+    }
+
+    const counter = (resultAngle)=>{
+        countData.frame++;
+        if(Math.min(resultAngle["rightUde"].angle,resultAngle["leftUde"].angle)>140){
+            countData.arms_extended++;
+        }else{
+            console.log(Math.min(resultAngle["rightUde"].angle,resultAngle["leftUde"].angle))
+        }
+    }
+
+    //効果音
+    const SE = {
+      //kick:new Audio('SE/kick.mp3'),
+      //rock:new Audio('SE/rock.mp3'),
+      //close:new Audio('SE/close.mp3'),
+      fa:new Audio('SE/fa.mp3'),
+      ra:new Audio('SE/ra.mp3'),
+      so:new Audio('SE/so.mp3'),
+      do:new Audio('SE/do.mp3'),
+      mi:new Audio('SE/mi.mp3'),
+      //west:new Audio('SE/west.mp3'),
+    };
+
+    //効果音を管理するための変数
+    var arms_extended_sound = false;
+    var arms_rising_sound = false;
+    var arms_top_sound = false;
+    var arms_cross_sound = false;
+    var knee_bent_sound = false;
+    //var OK_sound = false;
+
+    //処理順リスト,順番違ったら直しといて,リスト名はいい感じにしておいて
+    const OrderLists = {
+      list1:["armsExtended","armstop","armsRising"],
+      list2:["armscross","kneebent","armsRising"],
+    };
+    var training_mode = "list1";//今なんのトレーニングをしているか(list1は伸びの運動、list2は腕と脚の曲げ伸ばし)
+    var training_state = 0;//今何番目のポーズをしているか(training_mode="list1"で,training_state=0なら、"armsExtended",training_stateが大きくなることで判定するポーズを順にやっていくことを想定している)
+
+    //何回トレーニングしたかを記録する変数,運用の仕方は改良の余地あり
+    var training_count = 0;
+
+    //pose1とpose2からベクトルを作る関数
+    function makeVector(pose1,pose2){//始点,終点
+      const vector1 = {
+          x:Math.round((pose2.x-pose1.x)*1000000)/1000000,
+          y:Math.round((pose2.y-pose1.y)*1000000)/1000000,
+          z:Math.round((pose2.z-pose1.z)*1000000)/1000000,
+          visibility:Math.min(pose1.visibility,pose2.visibility),
+      }
+      return vector1;
+    }
+
+    //肩の角度から体の傾きを計算する関数
+    function bodyAngle(results){
+      var pL = results.poseWorldLandmarks;
+      var rh = POSE_LANDMARKS.RIGHT_SHOULDER;
+      var lh = POSE_LANDMARKS.LEFT_SHOULDER;
+      var vec = [pL[rh].x-pL[lh].x,pL[rh].y-pL[lh].y,pL[rh].z-pL[lh].z];
+      var vec_long = vec[0]**2+vec[1]**2+vec[2]**2;
+      var costh = -1*vec[0]/Math.sqrt(vec_long);
+      var sign;
+      if(pL[rh].z<=pL[lh].z){
+        sign = 1;
+      }else{
+        sign = -1;
+      }
+      return sign*Math.round(Math.acos(costh)*180/Math.PI*1000)/1000;
+    }
+
+    //キーポイントを引数とした角度の計算
+    function calcAngle(pose1,pose2,pose3){
+        // please learn here -> https://npm.runkit.com/%40mediapipe%2Fpose
+
+        const vector1 = {
+            x:Math.round((pose1.x-pose2.x)*1000000)/1000000,
+            y:Math.round((pose1.y-pose2.y)*1000000)/1000000,
+            z:Math.round((pose1.z-pose2.z)*1000000)/1000000,
+            visibility:Math.min(pose1.visibility,pose2.visibility),
+        }
+        const vector2 = {
+            x:Math.round((pose3.x-pose2.x)*1000000)/1000000,
+            y:Math.round((pose3.y-pose2.y)*1000000)/1000000,
+            z:Math.round((pose3.z-pose2.z)*1000000)/1000000,
+            visibility:Math.min(pose3.visibility,pose2.visibility),
+        }
+
+        //console.log("arrived vector",vector1,vector2)
+        return {
+            angle: Math.acos((vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z) / ( Math.sqrt(vector1.x**2 + vector1.y**2 + vector1.z**2) * Math.sqrt(vector2.x**2 + vector2.y**2 + vector2.z**2))) * 180 / Math.PI,
+            visibility: Math.min(vector1.visibility, vector2.visibility),
+            "vector1":vector1,
+            "vector2":vector2,
+        };
+    }
+
+    //ベクトルを引数とした角度の計算
+    function calcVectorAngle(vector1,vector2){
+      return {
+          angle: Math.acos((vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z) / ( Math.sqrt(vector1.x**2 + vector1.y**2 + vector1.z**2) * Math.sqrt(vector2.x**2 + vector2.y**2 + vector2.z**2))) * 180 / Math.PI,
+          visibility: Math.min(vector1.visibility, vector2.visibility),
+          "vector1":vector1,
+          "vector2":vector2,
+      };
+    }
+
+    //腕を広げているかどうかの計算
+    function armsExtended(results){
+      const pL = results.poseWorldLandmarks;
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
+      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_elbow = pL[POSE_LANDMARKS.LEFT_ELBOW];
+      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+
+      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
+      var is_extended = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=70)&&(calcAngle(right_hip,right_shoulder,right_elbow).angle<=110)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=70)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=110);//腕を広げているかどうか
+      var is_front = (calcAngle(right_shoulder,left_shoulder,left_elbow).angle>= 70)&&(calcAngle(right_shoulder,left_shoulder,left_elbow).angle<= 110)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle>= 70)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle<= 110);//前に手をあげてるかどうか
+      return is_stretch && is_extended && is_front;//腕が伸びていて、かつ、腕が広がっていたらよいとする
+    }
+
+    //腕が横からあがっているかどうかの計算
+    function armsRising(results){
+      const pL = results.poseWorldLandmarks;
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
+      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_elbow = pL[POSE_LANDMARKS.LEFT_ELBOW];
+      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+
+      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
+      var is_extended = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=70)&&(calcAngle(right_hip,right_shoulder,right_elbow).angle<=110)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=70)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=110);//腕を広げているかどうか
+      var is_side = (calcAngle(right_shoulder,left_shoulder,left_elbow).angle>=160)&&(calcAngle(right_shoulder,left_shoulder,left_elbow).angle<= 190)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle>= 160)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle<= 190);//前に手をあげてるかどうか
+
+      return is_stretch && is_extended && is_side;//腕が伸びていて、かつ、腕が広がっていたらよいとする
+    }
+
+    //腕が真上にあるかどうかの計算
+    //ここ以下の関数キャメルケースにしませんか？個人的に見やすいだけだけど
+    function armstop(results){
+      const pL = results.poseWorldLandmarks;
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
+      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_elbow = pL[POSE_LANDMARKS.LEFT_ELBOW];
+      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+
+      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
+      var is_top = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=160)&&(calcAngle(right_hip,right_shoulder,right_elbow).angle<=190)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=160)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=190);//腕が真上にあるかどうか
+      var is_front = (calcAngle(right_shoulder,left_shoulder,left_elbow).angle>= 70)&&(calcAngle(right_shoulder,left_shoulder,left_elbow).angle<= 110)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle>= 70)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle<= 110);//前に手をあげてるかどうか
+      return is_stretch && is_top && is_front;//腕が伸びていて、かつ、腕が広がっていたらよいとする
+    }
+
+    //腕がクロスしているかどうかの計算
+    function armscross(results){
+      const pL = results.poseWorldLandmarks;
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
+      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_elbow = pL[POSE_LANDMARKS.LEFT_ELBOW];
+      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
+      const left_ankle = pL[POSE_LANDMARKS.LEFT_ANKLE];
+
+      var is_bent_elbow =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle <= 110)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle <= 110) &&(left_wrist.x - right_wrist.x <= 0);//肘が曲がっているかどうか
+      return  is_bent_elbow;//
+    }
+
+    //膝が曲がっているかどうかの計算
+    function kneebent(results){
+      const pL = results.poseWorldLandmarks;
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const right_knee = pL[POSE_LANDMARKS.RIGHT_KNEE];
+      const right_ankle = pL[POSE_LANDMARKS.RIGHT_ANKLE];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+      const left_knee = pL[POSE_LANDMARKS.LEFT_KNEE];
+      const left_ankle = pL[POSE_LANDMARKS.LEFT_ANKLE];
+
+      var is_closed_heel =  (left_hip.x > left_ankle.x)&&(right_ankle.x > right_hip.x);//かかとが閉じているかどうか
+      var is_bent_knee = (calcAngle(right_hip,right_knee,right_ankle).angle<=160)&&(calcAngle(left_hip,left_knee,left_ankle).angle<=160);//膝が曲がっているかどうか
+      var is_outside = (calcAngle(left_hip, right_hip, right_knee).angle>=90)&&(calcAngle(right_hip, left_hip, left_knee).angle>=90);//外側に膝を開いているかどうか
+      return is_closed_heel && is_bent_knee && is_outside;//腕が伸びていて、かつ、腕が広がっていたらよいとする
+    }
+
+
+    //毎フレーム描画する関数
+    function onResults(results) {
+      if (!results.poseLandmarks) {
+        //grid.updateLandmarks([]);
+        return;
+      }
+
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      /*canvasCtx.drawImage(results.segmentationMask, 0, 0,
+                          canvasElement.width, canvasElement.height);*/
+
+      // Only overwrite existing pixels.
+      canvasCtx.globalCompositeOperation = 'source-in';
+      canvasCtx.fillStyle = '#00FF00';
+      canvasCtx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+
+      // Only overwrite missing pixels.
+      canvasCtx.globalCompositeOperation = 'destination-atop';
+      canvasCtx.drawImage(
+          results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+      canvasCtx.globalCompositeOperation = 'source-over';
+      drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
+                     {color: '#00FF00', lineWidth: 4});
+      drawLandmarks(canvasCtx, results.poseLandmarks,
+                    {color: '#FF0000', lineWidth: 2});
+      canvasCtx.restore();
+
+      //ここらへんで自分の関数の処理や音声の再生をしている、描画もやろうと思えばできるよ
+
+      //ポイントの角度の計算
+      const resultAngle = {};
+                for (let key in needVector) {
+                    resultAngle[key] = calcAngle(results.poseWorldLandmarks[needVector[key][0]], results.poseWorldLandmarks[needVector[key][1]], results.poseWorldLandmarks[needVector[key][2]]);
+                }
+
+      if (countData.flg){
+        if(resultAngle["rightUde"].visibility>0.9 && resultAngle["leftUde"].visibility>0.8){
+            counter(resultAngle);
+      }}
+
+    }
+
+    const pose = new Pose({locateFile: (file) => {
+      return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+    }});
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: true,
+      smoothSegmentation: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    pose.onResults(onResults);
+
+
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await pose.send({image: videoElement});
+      },
+      width: 1280,
+      height: 720
+    });
+    camera.start();
+</script>
