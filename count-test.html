@@ -17,17 +17,19 @@
         <div class="btn_area">
             <p class="ttl">結果</p>
             <p id = result></p>
-            <button>スクワットを始める</button>
+            <button id="btn_area_closed">閉じる</button>
         </div>
     </div>
-    
+
   <div class="container">
     <video hidden class="input_video"></video><!--入力映像-->
     <canvas class="output_canvas" width="1280px" height="720px"></canvas> <!--描画するキャンパス-->
     <!--<div class="landmark-grid-container"></div>-->
-    <button id="fin" class="fin" >20mカウント</button>
+    <br>
+    <input id="counttime" type="number" name="counttime" value="5">秒
+    <button id="fin" class="fin" >カウント開始</button>
   </div>
-  
+
 </div>
 </body>
 </html>
@@ -92,6 +94,8 @@
         const needVector = {
             "rightUde":[12,14,16],
             "leftUde":[11,13,15],
+            "rightKata":[14,12,24],
+            "leftKata":[13,11,23],
             // "rightHip": [12, 24, 26],
             // "leftHip": [11, 23, 25],
             // "rightKnee": [24, 26, 28],
@@ -104,16 +108,22 @@
 
     //ボタンを押したらカウントスタート
     const finButton = document.getElementById('fin');
+    const countTimeBar = document.getElementById('counttime');
         finButton.addEventListener('click', function () {
             countStart();
             //20m後にカウント終了
             setTimeout(function () {
                 countStop();
                 document.getElementsByClassName("overlay")[0].style.display = "block";
-            }, 20000);
+            }, countTimeBar.value*1000);
 
         });
 
+    //閉じるボタンで画面を閉じる
+    const closeButton = document.getElementById('btn_area_closed');
+        closeButton.addEventListener('click', function () {
+            document.getElementsByClassName("overlay")[0].style.display = "none";
+        });
 
     //後々変更するものはletで宣言しておく
     //変更しないものはconstで宣言しておく
@@ -123,6 +133,8 @@
         "endTime": 0,
         "frame": 0,
         "arms_extended": 0,
+        "arms_rising": 0,
+        "body_twisting": 0,
     };
 
     const countStart = () => {
@@ -139,20 +151,32 @@
         countData.endTime = Date.now();
 
         //カウント結果を表示
-        document.getElementById("result").innerHTML = "カウント結果は"+Math,round((countData.arms_extended/countData.frame)*100)+"%です";
+        document.getElementById("result").innerHTML
+          = "カウント結果は<br>腕の伸びが"+Math.round((countData.arms_extended/countData.frame)*100)+"%<br>腕の開きが"+Math.round((countData.arms_rising/countData.frame)*100)+"%<br>体のねじりが"+Math.round((countData.body_twisting/countData.frame)*100)+"%<br>です";
         console.log("カウント結果",countData);
         //カウント結果を表示するオーバーレイを表示
         const finButton = document.getElementById('fin');
 
     }
 
-    const counter = (resultAngle)=>{
+    const counter = (results,resultAngle)=>{
         countData.frame++;
         if(Math.min(resultAngle["rightUde"].angle,resultAngle["leftUde"].angle)>140){
             countData.arms_extended++;
         }else{
-            console.log(Math.min(resultAngle["rightUde"].angle,resultAngle["leftUde"].angle))
+            console.log("Ude=" + Math.min(resultAngle["rightUde"].angle,resultAngle["leftUde"].angle))
         }
+        if(Math.min(resultAngle["rightKata"].angle,resultAngle["leftKata"].angle)>70){
+            countData.arms_rising++;
+        }else{
+            console.log("Kata=" + Math.min(resultAngle["rightKata"].angle,resultAngle["leftKata"].angle))
+        }
+        if(Math.abs(bodyAngle(results))>45){
+            countData.body_twisting++;
+        }else{
+            console.log("twist=" + Math.abs(bodyAngle(results)))
+        }
+
     }
 
     //効果音
@@ -377,8 +401,8 @@
                 }
 
       if (countData.flg){
-        if(resultAngle["rightUde"].visibility>0.9 && resultAngle["leftUde"].visibility>0.8){
-            counter(resultAngle);
+        if(resultAngle["rightUde"].visibility>0.8 && resultAngle["leftUde"].visibility>0.8){
+            counter(results,resultAngle);
       }}
 
     }
