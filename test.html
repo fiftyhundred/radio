@@ -14,8 +14,11 @@
     <video hidden class="input_video"></video><!--入力映像-->
     <canvas class="output_canvas" width="1280px" height="720px"></canvas> <!--描画するキャンパス-->
     <!--<div class="landmark-grid-container"></div>-->
-    <button id="fin" class="fin" style="z-index: 10;">音声を聴く</button>
+    
     <div id="angle"></div><!--体の角度とかの出力先-->
+    <div id="top"></div>
+    <div id="side"></div>
+    <div id="cross"></div>
   </div>
 </body>
 </html>
@@ -27,56 +30,46 @@
     const landmarkContainer = document.getElementsByClassName('landmark-grid-container')[0];
     //const grid = new LandmarkGrid(landmarkContainer);
     const angleElement = document.getElementById("angle");
-
-    var flag = false;
-
-    document.addEventListener('keydown', event => {
-    // 変数eventの中身はKeyboardEventオブジェクト
-        flag = true;
-    });
+    const topElement = document.getElementById("top");
+    //const sideElement = document.getElementById("side");
+    //const crossElement = document.getElementById("cross");
 
     //効果音
     const SE = {
-      //kick:new Audio('SE/kick.mp3'),
-      //rock:new Audio('SE/rock.mp3'),
-      //close:new Audio('SE/close.mp3'),
-      fa:new Audio('SE/fa.mp3'),
-      ra:new Audio('SE/ra.mp3'),
-      so:new Audio('SE/so.mp3'),
-      do:new Audio('SE/do.mp3'),
-      mi:new Audio('SE/mi.mp3'),
-      OK:new Audio('SE/OK.mp3'),
-      notFront:new Audio('SE/notFront.mp3'),
-      notTop:new Audio('SE/notTop.mp3'),
-      notSide:new Audio('SE/notSide.mp3'),
-      notFrontTop:new Audio('SE/notFrontTop.mp3'),
-      notFrontSide:new Audio('SE/notFrontSide.mp3'),
-      notTopSide:new Audio('SE/notTopSide.mp3'),
       instruction:new Audio('SE/instruction1.mp3'),
-      //west:new Audio('SE/west.mp3'),
+      radio1:new Audio('SE/radio1.mp3'),
+      nobi_result:new Audio('SE/nobi_result.mp3'),
+      udeashi_result:new Audio('SE/udeashi_result.mp3'),
+      udemawashi_result:new Audio('SE/udemawashi_result.mp3'),
+      hundred:new Audio('SE/100.mp3'),
+      fifty:new Audio('SE/50.mp3'),
+      zero:new Audio('SE/zero.mp3'),
     };
 
     //効果音を管理するための変数
-    var arms_extended_sound = false;
-    var arms_rising_sound = false;
-    var arms_top_sound = false;
-   // var arms_cross_sound = false;
-    //var knee_bent_sound = false;
-    var flag1 = false;
-    var flag2 = false;
-    var flag3 = false;
-    //var OK_sound = false;
+    var count = 0;
+    var top_count = 0;
+    var side_count = 0;
+    var cross_count = 0;
+    var circle_count = 0;
+    var result = 0;
 
-    //処理順リスト,順番違ったら直しといて,リスト名はいい感じにしておいて
-    const OrderLists = {
-      list1:["armsExtended","armstop","armsRising"],
-      list2:["armscross","kneebent","armsRising"],
-    };
-    var training_mode = "list1";//今なんのトレーニングをしているか(list1は伸びの運動、list2は腕と脚の曲げ伸ばし)
-    var training_state = 0;//今何番目のポーズをしているか(training_mode="list1"で,training_state=0なら、"armsExtended",training_stateが大きくなることで判定するポーズを順にやっていくことを想定している)
+    //フラグ
+    var flag = false;
+    var flag1= false;
+    var flag_top = false;
+    var flag_side = false;
+    var flag_cross = false;
 
-    //何回トレーニングしたかを記録する変数,運用の仕方は改良の余地あり
-    var training_count = 0;
+    document.addEventListener('keydown', event => {
+    // 変数eventの中身はKeyboardEventオブジェクト
+        if(!flag && event.key === 'j'){
+          flag = true;
+        }
+        if(!flag1 && event.key === 'k'){
+          flag1 = true;
+        }
+    });
 
     //pose1とpose2からベクトルを作る関数
     function makeVector(pose1,pose2){//始点,終点
@@ -161,7 +154,7 @@
     }
 
     //腕が横からあがっているかどうかの計算
-    function armsRising(results){
+    function armsSide(results){
       const pL = results.poseWorldLandmarks;
       const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
       const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
@@ -173,14 +166,13 @@
       const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
 
       var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
-      var is_extended = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=70)&&(calcAngle(right_hip,right_shoulder,right_elbow).angle<=110)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=70)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=110);//腕を広げているかどうか
+      var is_extended = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=90)&&(calcAngle(right_hip,right_shoulder,right_elbow).angle<=130)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=90)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=130);//腕を広げているかどうか
       var is_side = (calcAngle(right_shoulder,left_shoulder,left_elbow).angle>=160)&&(calcAngle(right_shoulder,left_shoulder,left_elbow).angle<= 190)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle>= 160)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle<= 190);//前に手をあげてるかどうか
 
       return is_stretch && is_extended && is_side;//腕が伸びていて、かつ、腕が広がっていたらよいとする
     }
 
     //腕が真上にあるかどうかの計算
-    //ここ以下の関数キャメルケースにしませんか？個人的に見やすいだけだけど
     function armstop(results){
       const pL = results.poseWorldLandmarks;
       const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
@@ -192,31 +184,14 @@
       const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
       const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
 
-      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
-      var is_top = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=160)&&(calcAngle(right_hip,right_shoulder,right_elbow).angle<=190)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=160)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=190);//腕が真上にあるかどうか
+      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=160)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=160);//腕を伸ばしているかどうか
+      var is_top = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=160)&&(calcAngle(right_hip,right_shoulder,right_elbow).angle<=180)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=160)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=180);//腕が真上にあるかどうか
       var is_front = (calcAngle(right_shoulder,left_shoulder,left_elbow).angle>= 70)&&(calcAngle(right_shoulder,left_shoulder,left_elbow).angle<= 110)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle>= 70)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle<= 110);//前に手をあげてるかどうか
-      return is_stretch && is_top && is_front;//腕が伸びていて、かつ、腕が広がっていたらよいとする
-    }
-
-    function Standard(results){
-      const pL = results.poseWorldLandmarks;
-      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
-      const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
-      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
-      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
-      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
-      const left_elbow = pL[POSE_LANDMARKS.LEFT_ELBOW];
-      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
-      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
-      
-      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
-      var is_down = (calcAngle(left_hip, left_shoulder, left_wrist).angle <= 55)&&(calcAngle(right_hip, right_shoulder, right_wrist).angle <= 55);
-      //var is_close = (calcAngle(left_shoulder, right_shoulder, right_elbow).angle <= 100)&&(calcAngle(right_shoulder, left_shoulder, left_elbow).angle <= 100);
-      return is_stretch && is_down ;
+      return /*is_stretch &&*/ is_top && is_front;//腕が伸びていて、かつ、腕が広がっていたらよいとする
     }
 
     //腕がクロスしているかどうかの計算
-    /*function armscross(results){
+    function armscross(results){
       const pL = results.poseWorldLandmarks;
       const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
       const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
@@ -226,7 +201,7 @@
       const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
       const left_ankle = pL[POSE_LANDMARKS.LEFT_ANKLE];
 
-      var is_bent_elbow =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle <= 110)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle <= 110) &&(left_wrist.x - right_wrist.x <= 0);//肘が曲がっているかどうか
+      var is_bent_elbow =  (left_wrist.x - right_wrist.x <= 0);//肘が曲がっているかどうか
       return  is_bent_elbow;//
     }
 
@@ -244,7 +219,26 @@
       var is_bent_knee = (calcAngle(right_hip,right_knee,right_ankle).angle<=160)&&(calcAngle(left_hip,left_knee,left_ankle).angle<=160);//膝が曲がっているかどうか
       var is_outside = (calcAngle(left_hip, right_hip, right_knee).angle>=90)&&(calcAngle(right_hip, left_hip, left_knee).angle>=90);//外側に膝を開いているかどうか
       return is_closed_heel && is_bent_knee && is_outside;//腕が伸びていて、かつ、腕が広がっていたらよいとする
-    }*/
+    }
+
+  
+    var intervalID;
+
+    function Timer(){
+      count += 1;
+    }
+
+    function Start(){
+      if(intervalID == null){
+      intervalID = setInterval(Timer, 1000);
+    }}
+
+    function Reset(){
+      clearInterval(intervalID);
+      intervalID = null;
+      count = 0;
+    }
+
 
 
     //毎フレーム描画する関数
@@ -277,186 +271,159 @@
       canvasCtx.restore();
 
       //ここらへんで自分の関数の処理や音声の再生をしている、描画もやろうと思えばできるよ
-      var resulttxt="<h1>体の角度:"+bodyAngle(results)+"°</h1>";
-      /*if (training_state >= OrderLists[training_mode].length){
-        training_state = 0;
-        training_count = training_count + 1;
-      }
-      var next_training = OrderLists[training_mode][training_state];
-      resulttxt = resulttxt + next_training;
-      resulttxt = resulttxt + "<br>"+ "運動回数:" + training_count;
+      //var time="<h1>経過時間:"+count+"s</h1>";
+      //angleElement.innerHTML = time;
+      topElement.innerHTML = "<h1>伸び"+top_count+"回 横"+side_count+"回 回し"+circle_count+"回</h1>";
+      //sideElement.innerHTML = "<h1>横"+side_count+"回</h1>";
+      //crossElement.innerHTML = "<h1>回し"+circle_count+"回</h1>";
 
-      angleElement.innerHTML = resulttxt;
-
-      //似たような機構が多いから、ここらへんの処理群をいい感じにまとめて綺麗にしたいけど、どんな運動支援にするかの構造が決まってからになりそう
-      //OrderListsによる「今なんのトレーニングをしているか」の判定は音声出すところでしているけど、今後の設計次第では関数を実行する前段階でやった方がよさそう
-      var is_arms_extended = armsExtended(results);
-      if (next_training=="armsExtended" && !arms_extended_sound && is_arms_extended){
-        SE["fa"].currentTime = 0;
-        SE["fa"].play();
-        arms_extended_sound = true;
-        training_state = training_state + 1;
-      }
-      if(arms_extended_sound && !is_arms_extended){
-        arms_extended_sound = false;
-      }
-
-      var is_arms_rising = armsRising(results);
-      if (next_training=="armsRising" && !arms_rising_sound && is_arms_rising){
-        SE["so"].currentTime = 0;
-        SE["so"].play();
-        arms_rising_sound = true;
-        training_state = training_state + 1;
-      }
-      if(arms_rising_sound && !is_arms_rising){
-        arms_rising_sound = false;
-      }
-
-      var is_arms_top = armstop(results);
-      if (next_training=="armstop" && !arms_top_sound && is_arms_top){
-        SE["ra"].currentTime = 0;
-        SE["ra"].play();
-        arms_top_sound = true;
-        training_state = training_state + 1;
-      }
-      if(arms_top_sound && !is_arms_top){
-        arms_top_sound = false;
-      }
-
-      var is_arms_cross = armscross(results);
-      if (next_training=="armscross" && !arms_cross_sound && is_arms_cross){
-        SE["do"].currentTime = 0;
-        SE["do"].play();
-        arms_cross_sound = true;
-        training_state = training_state + 1;
-      }
-      if(arms_cross_sound && !is_arms_cross){
-        arms_cross_sound = false;
-      }
-
-      var is_bent_knee = kneebent(results);
-      if (next_training=="kneebent" && !knee_bent_sound && is_bent_knee){
-        SE["mi"].currentTime = 0;
-        SE["mi"].play();
-        knee_bent_sound = true;
-        training_state = training_state + 1;
-      }
-      if(knee_bent_sound && !is_bent_knee){
-        knee_bent_sound = false;
-      }*/
-
-      if(flag){
-        SE["instruction"].currentTime = 0;
-        SE["instruction"].play();
+      if(flag){//　jキーを押したら音楽とタイムカウントスタート
+        SE["radio1"].currentTime = 0;
+        SE["radio1"].play();
+        Start();
         flag = false;
       }
-
-      var is_arms_extended = armsExtended(results);
-      if (!arms_extended_sound && is_arms_extended && training_state == 0){
-        SE["fa"].currentTime = 0;
-        SE["fa"].play();
-        arms_extended_sound = true;
-        training_state = training_state + 1;
-      }
-      if(arms_extended_sound && !is_arms_extended){
-        arms_extended_sound = false;
-      }
-
-      if(is_arms_extended){
-        flag1 = true;
-      }
-
-      var is_arms_rising = armsRising(results);
-      if (!arms_rising_sound && is_arms_rising && training_state == 2){
-        SE["so"].currentTime = 0;
-        SE["so"].play();
-        arms_rising_sound = true;
-        training_state = 0;
-      }
-      if(arms_rising_sound && !is_arms_rising){
-        arms_rising_sound = false;
-      }
-
-      if(is_arms_rising){
-        flag3 = true;
-      }
-
-      var is_arms_top = armstop(results);
-      if (!arms_top_sound && is_arms_top && training_state == 1){
-        SE["ra"].currentTime = 0;
-        SE["ra"].play();
-        arms_top_sound = true;
-        training_state = training_state + 1;
-      }
-      if(arms_top_sound && !is_arms_top){
-        arms_top_sound = false;
-      }
-
-      if(is_arms_top){
-        flag2 = true;
-      }
-
-      var is_standard = Standard(results);
-      if(flag1 && flag2 && flag3 && is_standard){
-        SE["OK"].currentTime = 0;
-        SE["OK"].play();
+      /*if(flag1){
+        Start();
         flag1 = false;
-        flag2 = false;
-        flag3 = false;
+      }*/
+      if(flag1 && result == 0){//　kキーを押したらタイムカウントストップ　結果の提示を開始
+        Reset();
+        flag1 = false;
+        result += 1
+      }
+      if(flag1 && result == 1){
+        SE["nobi_result"].currentTime = 0;
+        SE["nobi_result"].play();//伸びの運動
+        flag1 = false;
+        result += 1;
+      }
+      if(flag1 && result == 2){
+        if(top_count == 2){
+          SE["hundred"].currentTime = 0;
+          SE["hundred"].play();//100点
+        }
+        if(top_count == 1){
+          SE["fifty"].currentTime = 0;
+          SE["fifty"].play();//50点
+        }
+        if(top_count == 0){
+          SE["zero"].currentTime = 0;
+          SE["zero"].play();//0点
+        }
+        flag1 = false;
+        result += 1;
+      }
+      if(flag1 && result == 3){
+        SE["udeashi_result"].currentTime = 0;
+        SE["udeashi_result"].play();//腕と脚の運動
+        flag1 = false;
+        result += 1;
+      }
+      if(flag1 && result == 4){
+        if(side_count >= 8){
+          SE["hundred"].currentTime = 0;
+          SE["hundred"].play();//100点
+        }
+        if(side_count >= 1 && side_count <= 7){
+          SE["fifty"].currentTime = 0;
+          SE["fifty"].play();//50点
+        }
+        if(side_count ==0){
+          SE["zero"].currentTime = 0;
+          SE["zero"].play();//0点
+        }
+        flag1 = false;
+        result += 1;
+      }
+      if(flag1 && result == 5){
+        SE["udemawashi_result"].currentTime = 0;
+        SE["udemawashi_result"].play();//腕と脚の運動
+        flag1 = false;
+        result += 1;
+      }
+      if(flag1 && result == 6){
+        if(circle_count >= 8){
+          SE["hundred"].currentTime = 0;
+          SE["hundred"].play();//100点
+        }
+        if(circle_count >= 1 && side_count <= 7){
+          SE["fifty"].currentTime = 0;
+          SE["fifty"].play();//50点
+        }
+        if(circle_count ==0){
+          SE["zero"].currentTime = 0;
+          SE["zero"].play();//0点
+        }
+        flag1 = false;
+        result += 1;
+      }
+      if(flag1 && result == 7){
+        top_count = 0;
+        side_count = 0;
+        circle_count = 0;
+        flag1 = false;
+        result = 0;
+      }
+      
+      
+      
+      if(count >= 7 && count <= 15){
+        var top = armstop(results);
+        var side = armsSide(results);
+        var training_state = 0;
+        if(training_state == 1 && side){
+          training_state = 0;
+        }
+        if(top && training_state == 0 && !flag_top){
+          training_state = 1;
+          flag_top = true;
+          top_count += 1;
+        }
+        if(!top && flag_top){
+          flag_top = false;
+        }
       }
 
-      if(!flag1 && flag2 && flag3 && is_standard){
-        SE["notFront"].currentTime = 0;
-        SE["notFront"].play();
-        flag1 = false;
-        flag2 = false;
-        flag3 = false;
-        training_state = 0;
+
+      if(count >= 15 && count <= 28){
+        var side = armsSide(results);
+        var cross = armscross(results);
+        var training_state = 0;
+        if(training_state == 1 && cross){
+          training_state = 0;
+        }
+        if(side && !flag_side && training_state == 0){
+          training_state = 1;
+          flag_side = true;
+          side_count += 1;
+        }
+        if(!side && flag_side){
+          flag_side = false;
+        }
       }
 
-      if(flag1 && !flag2 && flag3 && is_standard){
-        SE["notTop"].currentTime = 0;
-        SE["notTop"].play();
-        flag1 = false;
-        flag2 = false;
-        flag3 = false;
-        training_state = 0;
-      }
+      /*if(count >= 15 && count <= 29){
+        var cross = armscross(results);
+        if(cross && !flag_cross){
+          flag_cross = true;
+          cross_count += 1;
+        }
+        if(!cross && flag_cross){
+          flag_cross = false;
+        }
+      }*/
 
-      if(flag1 && flag2 && !flag3 && is_standard){
-        SE["notSide"].currentTime = 0;
-        SE["notSide"].play();
-        flag1 = false;
-        flag2 = false;
-        flag3 = false;
-        training_state = 0;
-      }
 
-      if(!flag1 && !flag2 && flag3 && is_standard){
-        SE["notFrontTop"].currentTime = 0;
-        SE["notFrontTop"].play();
-        flag1 = false;
-        flag2 = false;
-        flag3 = false;
-        training_state = 0;
-      }
-
-      if(flag1 && !flag2 && !flag3 && is_standard){
-        SE["notTopSide"].currentTime = 0;
-        SE["notTopSide"].play();
-        flag1 = false;
-        flag2 = false;
-        flag3 = false;
-        training_state = 0;
-      }
-
-      if(!flag1 && flag2 && !flag3 && is_standard){
-        SE["notFrontSide"].currentTime = 0;
-        SE["notFrontSide"].play();
-        flag1 = false;
-        flag2 = false;
-        flag3 = false;
-        training_state = 0;
+      if(count >= 29 && count <= 44){
+        var circle_top = armstop(results);
+        if(circle_top && !flag_top){
+          circle_count += 1;
+          flag_top = true;
+        }
+        if(!circle_top && flag_top){
+          flag_top = false;
+        }
       }
 
 
