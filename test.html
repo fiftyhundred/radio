@@ -37,7 +37,7 @@
     //効果音
     const SE = {
       instruction:new Audio('SE/instruction1.mp3'),
-      radio:new Audio('SE/radio2.mp3'),
+      radio:new Audio('SE/radio_full.m4a'),
       nobi_result:new Audio('SE/nobi_result.mp3'),
       udeashi_result:new Audio('SE/udeashi_result.mp3'),
       udemawashi_result:new Audio('SE/udemawashi_result.mp3'),
@@ -55,12 +55,13 @@
     var count = 0; //時間のカウント
     var top_count = 0; //伸びの運動
     var side_count = 0; //腕と脚の運動
-    var cross_count = 0; 
+    var cross_count = 0;
     var circle_count = 0; //腕を回す運動
     var X_count = 0; //身体を大きく広げる運動
     var arms_over = 0; //腕をあげて横を伸ばす運動
     var back_count = 0; //身体を反らす運動
     var to_lr_count = 0; //身体を左右にねじる運動
+    var chest_count = 0; //胸を反らす運動
 
     var result = 0; //結果の提示に使用
 
@@ -74,6 +75,8 @@
     var flag_arm = false; //身体側面を伸ばしているか
     var flag_back = false; //身体を反らしているか
     var flag_lr = false; //腕を左右に振っているか
+    var flag_up = false;//股を開いて腕が上に上がっているか
+    var flag_chest = false;//胸を反ったか
 
     document.addEventListener('keydown', event => {
     // 変数eventの中身はKeyboardEventオブジェクト
@@ -274,7 +277,7 @@
 
       var is_stretch = (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=140);
       var is_over = (right_wrist.x > left_shoulder.x && right_elbow.y < right_shoulder.y);
-      
+
       return is_stretch && is_over;
     }
 
@@ -289,7 +292,7 @@
 
       var is_stretch = (calcAngle(left_shoulder,left_elbow,left_wrist).angle>=140);
       var is_over = (left_wrist.x < right_shoulder.x && left_elbow.y < left_shoulder.y);
-      
+
       return is_stretch && is_over;
     }
 
@@ -325,7 +328,7 @@
 
       var is_bent = (calcAngle(right_knee,right_hip,right_shoulder).angle<=160) && (calcAngle(left_knee,left_hip,left_shoulder).angle<=170);
       var is_back = (right_shoulder.z > right_hip.z) && (left_shoulder.z > left_hip.z);
-      
+
       return is_bent && is_back;
     }
 
@@ -392,6 +395,99 @@
       //var over = (right_wrist.y < left_shoulder.y) && (left_wrist.y < left_elbow.y);
       return shoulder && wrist;
     }
+
+    //8つ目の運動で使用、腕をあげて股を開く
+    function armsUp(results){
+      const pL = results.poseWorldLandmarks;
+      const left_knee = pL[POSE_LANDMARKS.LEFT_KNEE];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const right_knee = pL[POSE_LANDMARKS.RIGHT_KNEE];
+
+      var is_arms_top = armsTop(results);
+      var is_open_legs = (right_hip.x > right_knee.x && left_hip.x < left_knee.x);
+
+      return is_arms_top && is_open_legs;
+    }
+
+    //8つ目の運動で使用、腕を下げる
+    function armsDown(results){
+      const pL = results.poseWorldLandmarks;
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_elbow = pL[POSE_LANDMARKS.LEFT_ELBOW];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+
+      var is_arms_bottom = (calcAngle(right_hip,right_shoulder,right_elbow).angle<=50)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=50);//腕が下にあるかどうか
+
+      return is_arms_bottom;
+    }
+
+    //9つ目の運動で使用、体を右に倒す
+    function bodyRightFront(results){
+      const pL = results.poseWorldLandmarks;
+      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_knee = pL[POSE_LANDMARKS.RIGHT_KNEE];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_knee = pL[POSE_LANDMARKS.LEFT_KNEE];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+
+      var is_bent = (calcAngle(right_knee,right_hip,right_shoulder).angle<=120) && (calcAngle(left_knee,left_hip,left_shoulder).angle<=120);
+      var is_front = (right_wrist.y > right_knee.y) && (left_wrist.y > left_knee.y);
+      var is_body_front = is_bent && is_front
+      var is_right = (right_wrist.x<0 && left_wrist.x<0); //手が両方とも腰よりも右にあるか
+
+      return is_body_front && is_right;
+    }
+
+    //9つ目の運動で使用、体を左に倒す
+    function bodyLeftFront(results){
+      const pL = results.poseWorldLandmarks;
+      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_knee = pL[POSE_LANDMARKS.RIGHT_KNEE];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_knee = pL[POSE_LANDMARKS.LEFT_KNEE];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+
+
+      var is_bent = (calcAngle(right_knee,right_hip,right_shoulder).angle<=120) && (calcAngle(left_knee,left_hip,left_shoulder).angle<=120);
+      var is_front = (right_wrist.y > right_knee.y) && (left_wrist.y > left_knee.y);
+      var is_body_front = is_bent && is_front
+      var is_left = (right_wrist.x>0 && left_wrist.x>0); //手が両方とも腰よりも左にあるか
+
+      return is_body_front && is_left;
+    }
+
+    //9つ目の運動で使用、小の字に開いて胸を反らす
+    function bodyChestUp(results){
+      const pL = results.poseWorldLandmarks;
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
+      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const right_knee = pL[POSE_LANDMARKS.RIGHT_KNEE];
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_elbow = pL[POSE_LANDMARKS.LEFT_ELBOW];
+      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+      const left_knee = pL[POSE_LANDMARKS.LEFT_KNEE];
+
+      //var chest_up = (right_shoulder.z > 0) && (left_shoulder.z > 0);
+      var is_stand = (calcAngle(right_knee,right_hip,right_shoulder).angle>=150)&&(calcAngle(left_knee,left_hip,left_shoulder).angle>=150);
+      var is_open_arms = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=30)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=30);//腕を少し広げているかどうか
+      var is_arms_spread = (right_elbow.x<right_shoulder.x) && (right_wrist.x<right_shoulder.x) && (left_elbow.x>left_shoulder.x) && (left_wrist.x>left_shoulder.x);//両手が外側に開いているか
+      var is_open_legs = (right_hip.x > right_knee.x && left_hip.x < left_knee.x);
+      return is_open_arms && is_arms_spread && is_open_legs;
+    }
+
     //膝が曲がっているかどうかの計算
     /*function kneeBent(results){
       const pL = results.poseWorldLandmarks;
@@ -461,7 +557,7 @@
       //ここらへんで自分の関数の処理や音声の再生をしている、描画もやろうと思えばできるよ
       //var time="<h1>経過時間:"+count+"</h1>";
       //angleElement.innerHTML = time;
-      countElement.innerHTML = "<h1>経過時間:"+count+"s  伸び"+top_count+"回 横"+side_count+"回 回し"+circle_count+"回 大の字"+X_count+"回 横伸ばし"+arms_over+"回 前後ろ"+back_count+"回 ねじり"+to_lr_count+"回</h1>";
+      countElement.innerHTML = "<h1>経過時間:"+count+"s  伸び"+top_count+"回 横"+side_count+"回 回し"+circle_count+"回 大の字"+X_count+"回 横伸ばし"+arms_over+"回 前後ろ"+back_count+"回 ねじり"+to_lr_count+"回 胸反らし"+chest_count+"回</h1>";
       //sideElement.innerHTML = "<h1>横"+side_count+"回</h1>";
       //crossElement.innerHTML = "<h1>回し"+circle_count+"回</h1>";
 
@@ -648,12 +744,22 @@
       //countを1秒1カウントにするかどうかは考えた方がよさそう(例:0.1秒に1カウント,bgmに合わせたカウントなど,1秒1カウントだと16分割が大変そう) ← 0.1秒にしたら変な挙動を始めて上手くいかず……また、ラジオ体操の楽譜見たらテンポがコロコロ変わってて難しそうでした。。。
       //もしくはcountとは別に、各運動開始時に0から始まる新しい秒数管理する変数を用意して管理するのもあり(好きなように実装してほしい)
 
+      /*if(armsUp(results)){
+        document.body.style.backgroundColor = 'green';
+      }else if(bodyRightFront(results) || bodyLeftFront(results)){
+        document.body.style.backgroundColor = 'yellow';
+      }else if(bodyChestUp(results)){
+        document.body.style.backgroundColor = 'blue';
+      }else{
+        document.body.style.backgroundColor = 'white';
+      }*/
+
 
       if(count >= 7 && count <= 15){ //伸びの運動判定
         var top = armsTop(results);
         var side = armsSide(results);
         //var training_state = 0;
-        
+
         /*if(training_state == 1 && side){  //秒数で区切ってやってみたんですが上手くいかず。。。運動中に通過する別の姿勢の判定を導入して、それを通過したらポイントとなる姿勢のフラグが下がるようにしました
           training_state = 0;
           flag_top = false;
@@ -724,7 +830,7 @@
           flag_X = false;
         }
       }
-      
+
       if(count >= 60 && count <= 74){ //横を伸ばす運動判定
         var right_arm = right_arm_over(results);
         var left_arm = left_arm_over(results);
@@ -757,15 +863,54 @@
         var r = to_right(results);
         var l = to_left(results);
         if(ro && !flag_lr || lo && !flag_lr){
-        flag_lr = true;
-        to_lr_count += 1;
+          flag_lr = true;
+          to_lr_count += 1;
         }
         if(r || l){ //身体を左右どちらかに軽くねじったらフラグを下げる
           flag_lr = false;
         }
       }
-      
-      
+
+      if(count >= 103 && count <= 120){ //腕を上下に伸ばす運動判定
+        var up = armsUp(results);
+        var down = armsDown(results);
+        if(up && !flag_up){ //腕をあげて股を開いたら
+          flag_up = true;
+          top_count += 1;
+        }
+        if(down){ //腕を下げたらフラグを下げる
+          flag_up = false;
+        }
+      }
+
+      if(count >= 120 && count <= 135){ //体を斜め下に曲げ胸を反らす運動判定
+        var brf = bodyRightFront(results);
+        var blf = bodyLeftFront(results);
+        var chest = bodyChestUp(results);
+        if(chest && !flag_chest){
+          flag_chest = true;
+          chest_count += 1;
+        }
+        if(brf || blf){
+          flag_chest = false;
+        }
+      }
+
+      if(count >= 135 && count <= 150){ //10個目以降もcount振っといたけど一応確認お願いね
+      }
+
+      if(count >= 150 && count <= 160){ //11個目
+      }
+
+      if(count >= 160 && count <= 176){ //12個目
+      }
+
+      if(count >= 176 && count <= 194){ //13個目
+      }
+
+
+
+
 
       //grid.updateLandmarks(results.poseWorldLandmarks);
     }
