@@ -59,12 +59,13 @@
     const SE = {
       attention:new Audio('SE/attention.mp3'),
       radio:new Audio('SE/radio_full.m4a'),
-      nobi_result:new Audio('SE/nobi_result.mp3'),
-      udeashi_result:new Audio('SE/udeashi_result.mp3'),
-      udemawashi_result:new Audio('SE/udemawashi_result.mp3'),
-      mune_result:new Audio('SE/mune_result.mp3'),
-      yoko_result:new Audio('SE/yoko_result.mp3'),
-      zengo_result:new Audio('SE/zengo_result.mp3'),
+      score:new Audio('SE/score_is.mp3'),
+      nobi_result:new Audio('SE/nobi.mp3'),
+      udeashi_result:new Audio('SE/udeashi.mp3'),
+      udemawashi_result:new Audio('SE/udemawashi.mp3'),
+      mune_result:new Audio('SE/mune.mp3'),
+      yoko_result:new Audio('SE/yoko.mp3'),
+      zengo_result:new Audio('SE/zengo.mp3'),
       nejiri_result:new Audio('SE/nejiri.mp3'),
       joge_result:new Audio('SE/joge.mp3'),
       munehiraki_result:new Audio('SE/munehiraki.mp3'),
@@ -72,17 +73,46 @@
       jump_result:new Audio('SE/jump.mp3'),
       breath_result:new Audio('SE/breath.mp3'),
       hundred:new Audio('SE/100.mp3'),
-      one_miss:new Audio('SE/87.5.mp3'),
-      two_miss:new Audio('SE/75.mp3'),
-      three_miss:new Audio('SE/62.5.mp3'),
-      fifty:new Audio('SE/50.mp3'),
-      five_miss:new Audio('SE/37.5.mp3'),
-      six_miss:new Audio('SE/25.mp3'),
-      seven_miss:new Audio('SE/12.5.mp3'),
+      ninetyF:new Audio('SE/ninety_five.mp3'),
+      ninety:new Audio('SE/ninety.mp3'),
+      eightyF:new Audio('SE/eighty_five.mp3'),
+      eighty:new Audio('SE/eighty.mp3'),
+      seventyF:new Audio('SE/75.mp3'),
+      seventy:new Audio('SE/seventy.mp3'),
+      sixtyF:new Audio('SE/sixty_five.mp3'),
+      sixty:new Audio('SE/sixty.mp3'),
+      fiftyF:new Audio('SE/fifty_five.mp3'),
+      fifty:new Audio('SE/fifty.mp3'),
+      fortyF:new Audio('SE/forty_five.mp3'),
+      forty:new Audio('SE/forty.mp3'),
+      thirtyF:new Audio('SE/thirty_five.mp3'),
+      thirty:new Audio('SE/thirty.mp3'),
+      twentyF:new Audio('SE/twenty_five.mp3'),
+      twenty:new Audio('SE/twenty.mp3'),
+      fifteen:new Audio('SE/fifteen.mp3'),
+      ten:new Audio('SE/ten.mp3'),
+      five:new Audio('SE/five.mp3'),
       zero:new Audio('SE/zero.mp3'),
+      success0:new Audio('SE/zero_kai.mp3'),
+      success1:new Audio('SE/one_kai.mp3'),
+      success2:new Audio('SE/two_kai.mp3'),
+      success3:new Audio('SE/three_kai.mp3'),
+      success4:new Audio('SE/four_kai.mp3'),
+      success5:new Audio('SE/five_kai.mp3'),
+      success6:new Audio('SE/six_kai.mp3'),
+      success7:new Audio('SE/seven_kai.mp3'),
+      success8:new Audio('SE/eight_kai.mp3'),
+      //one_miss:new Audio('SE/87.5.mp3'),
+      //three_miss:new Audio('SE/62.5.mp3'),
+      //fifty_ten:new Audio('SE/50.mp3'),
+      //five_miss:new Audio('SE/37.5.mp3'),
+      //six_miss:new Audio('SE/25.mp3'),
+      //seven_miss:new Audio('SE/12.5.mp3'),
       OK:new Audio('SE/OKsound2.mp3'),
       announce:new Audio('SE/announce3.mp3'),
       START:new Audio('SE/STARTannounce.mp3'),
+      otsukare:new Audio('SE/otsukare.mp3'),
+      otsukare2:new Audio('SE/otsukare2.mp3'),
     };
 
     //カウント
@@ -103,8 +133,9 @@
     var jump_count = 0; //ジャンプ
     var side_count2 = 0;
     var breath_count = 0;
+    var total = 0;
 
-    var result = 1; //結果の提示に使用
+    var result = 0; //結果の提示に使用
 
     //フラグ
     var flag_announce = false;
@@ -127,10 +158,10 @@
 
     document.addEventListener('keydown', event => {
     // 変数eventの中身はKeyboardEventオブジェクト
-        if(!flag && event.key === 'j'){
+        if(!flag && event.key === 'k'){
           flag = true;
         }
-        if(!flag1 && event.key === 'k'){
+        if(!flag1 && event.key === 'j'){
           flag1 = true;
         }
     });
@@ -217,6 +248,31 @@
       return is_stretch && is_extended && is_front;//腕が伸びていて、かつ、腕が広がっていたらよいとする
     }*/
 
+
+    //気をつけの姿勢
+    function Standard(results){
+      const pL = results.poseWorldLandmarks;
+      const right_shoulder = pL[POSE_LANDMARKS.RIGHT_SHOULDER];
+      const right_elbow = pL[POSE_LANDMARKS.RIGHT_ELBOW];
+      const right_wrist = pL[POSE_LANDMARKS.RIGHT_WRIST];
+      const right_hip = pL[POSE_LANDMARKS.RIGHT_HIP];
+      const left_shoulder = pL[POSE_LANDMARKS.LEFT_SHOULDER];
+      const left_elbow = pL[POSE_LANDMARKS.LEFT_ELBOW];
+      const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
+      const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
+      const right_knee = pL[POSE_LANDMARKS.RIGHT_KNEE];
+      const right_ankle = pL[POSE_LANDMARKS.RIGHT_ANKLE];
+      const left_knee = pL[POSE_LANDMARKS.LEFT_KNEE];
+      const left_ankle = pL[POSE_LANDMARKS.LEFT_ANKLE];
+      
+      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
+      var is_down = (calcAngle(left_hip, left_shoulder, left_elbow).angle <= 40)&&(calcAngle(right_hip, right_shoulder, right_elbow).angle <= 40);
+      var legs_stretch = (calcAngle(right_hip, right_knee, right_ankle).angle >= 150)&&(calcAngle(left_hip, left_knee, left_ankle).angle >= 150);
+      var legs_close  = (right_ankle.x >= right_knee.x) && (left_ankle.x <= left_knee.x);
+      return is_stretch && is_down && legs_stretch && legs_close;
+    }
+
+
     //腕が横からあがっているかどうかの計算
     function armsSide(results){
       const pL = results.poseWorldLandmarks;
@@ -248,7 +304,7 @@
       const left_wrist = pL[POSE_LANDMARKS.LEFT_WRIST];
       const left_hip = pL[POSE_LANDMARKS.LEFT_HIP];
 
-      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=160)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=160);//腕を伸ばしているかどうか
+      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
       var is_top = (calcAngle(right_hip,right_shoulder,right_elbow).angle>=160)&&(calcAngle(right_hip,right_shoulder,right_elbow).angle<=180)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle>=160)&&(calcAngle(left_hip,left_shoulder,left_elbow).angle<=180);//腕が真上にあるかどうか
       var is_front = (calcAngle(right_shoulder,left_shoulder,left_elbow).angle>= 70)&&(calcAngle(right_shoulder,left_shoulder,left_elbow).angle<= 110)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle>= 70)&&(calcAngle(left_shoulder,right_shoulder,right_elbow).angle<= 110);//前に手をあげてるかどうか
       return is_stretch && is_top && is_front;//腕が伸びていて、かつ、腕が広がっていたらよいとする
@@ -647,7 +703,7 @@
       //ここらへんで自分の関数の処理や音声の再生をしている、描画もやろうと思えばできるよ
       //var time="<h1>経過時間:"+count+"</h1>";
       //angleElement.innerHTML = time;
-      countElement.innerHTML = "<font size = 5><p>時間:"+count+"s</p><br>背伸びの運動:"+top_count+"/2回</br><br>腕と脚の運動:"+side_count+"/8回</br><br>腕を回す運動:"+circle_count+"/8回</br><br>胸の運動:"+X_count+"/4回</br><br>横に曲げる運動:"+arms_over+"/8回</br><br>前後に曲げる運動:"+back_count+"/2回</br><br>ねじる運動:"+to_lr_count+"/4回</br><br>上下に伸ばす運動:"+up_down_count+"/4回</br><br>胸を反らす運動:"+chest_count+"/4回</br><br>大きく回す運動:"+cycle_count+"/4回</br><br>飛び跳ねる運動:"+jump_count+"/4回</br><br>腕と脚の運動:"+side_count2+"/8回</br><br>深呼吸:"+breath_count+"/4回</br></font>";
+      countElement.innerHTML = "<font size = 5><p>時間:"+count+"s</p><p>合計:"+total+"/64回</p><br>背伸びの運動:"+top_count+"/2回</br><br>腕と脚の運動:"+side_count+"/8回</br><br>腕を回す運動:"+circle_count+"/8回</br><br>胸の運動:"+X_count+"/4回</br><br>横に曲げる運動:"+arms_over+"/8回</br><br>前後に曲げる運動:"+back_count+"/2回</br><br>ねじる運動:"+to_lr_count+"/4回</br><br>上下に伸ばす運動:"+up_down_count+"/4回</br><br>胸を反らす運動:"+chest_count+"/4回</br><br>大きく回す運動:"+cycle_count+"/4回</br><br>飛び跳ねる運動:"+jump_count+"/4回</br><br>腕と脚の運動:"+side_count2+"/8回</br><br>深呼吸:"+breath_count+"/4回</br></font>";
       //sideElement.innerHTML = "<h1>横"+side_count+"回</h1>";
       //crossElement.innerHTML = "<h1>回し"+circle_count+"回</h1>";
 
@@ -663,48 +719,164 @@
 
       /*if(result == 0 && armsTop(results)){
         flag_check = true;
-      }
-      
-      if(flag_check){
-        if(results.poseWorldLandmarks[POSE_LANDMARKS.LEFT_ANKLE].visibility < 0.8 || results.poseWorldLandmarks[POSE_LANDMARKS.RIGHT_ANKLE].visibility < 0.8){
-          SE["attention"].currentTime = 0;
-          SE["attention"].play();
-        }
-        if(results.poseWorldLandmarks[POSE_LANDMARKS.LEFT_ANKLE].visibility > 0.8 && results.poseWorldLandmarks[POSE_LANDMARKS.RIGHT_ANKLE].visibility > 0.8){
-          flag_check = false;
-        }
       }*/
+      
+      
+      /*if(results.poseWorldLandmarks[POSE_LANDMARKS.LEFT_ANKLE].visibility < 0.8 || results.poseWorldLandmarks[POSE_LANDMARKS.RIGHT_ANKLE].visibility < 0.8){
+        SE["attention"].currentTime = 0;
+        SE["attention"].play();
+      }*/
+      
       
       //足首のvisibilityで全身が映っているか判定、アナウンスの2秒後に音楽スタート
       //この辺もっと上手くできると思うんですけど、僕のスキルじゃこれが限界でした
-      if(results.poseWorldLandmarks[POSE_LANDMARKS.LEFT_ANKLE].visibility < 0.8 || results.poseWorldLandmarks[POSE_LANDMARKS.RIGHT_ANKLE].visibility < 0.8){
-        flag_check = false;
-      }
+      
+      
+        if(results.poseWorldLandmarks[POSE_LANDMARKS.LEFT_ANKLE].visibility < 0.8 || results.poseWorldLandmarks[POSE_LANDMARKS.RIGHT_ANKLE].visibility < 0.8){
+          flag_check = false;
+        }
 
-      if(!flag_check && results.poseWorldLandmarks[POSE_LANDMARKS.LEFT_ANKLE].visibility > 0.8 && results.poseWorldLandmarks[POSE_LANDMARKS.RIGHT_ANKLE].visibility > 0.8){
-        flag_check = true;
-        SE["START"].currentTime = 0;
-        SE["START"].play();
-      }
+        if(count == 0 && Standard(results) && !flag_check && results.poseWorldLandmarks[POSE_LANDMARKS.LEFT_ANKLE].visibility > 0.8 && results.poseWorldLandmarks[POSE_LANDMARKS.RIGHT_ANKLE].visibility > 0.8){
+          flag_check = true;
+          SE["START"].currentTime = 0;
+          SE["START"].play();
+        }
+      
 
       if(flag_check){
         Start();
       }
 
       if(count == 2){
-        flag = true;
+        SE["radio"].currentTime = 0;
+        SE["radio"].play();
       }
       
-      if(flag){//　jキーを押したら音楽とタイムカウントスタート
+      /*if(flag){ //jキーを押したら音楽とタイムカウントスタート
         SE["radio"].currentTime = 0;
         SE["radio"].play();
         //Start();
         flag = false;
+      }*/
+
+      if(count == 196){
+        SE["otsukare"].currentTime = 0;
+        SE["otsukare"].play();
       }
 
-      if(flag1 && result == 1){//　kキーを押したらタイムカウントストップ　結果の提示を開始
+      if(flag1 && result == 0){//kキーを押したらタイムカウントストップ　結果の提示を開始
         Reset();
+        SE["score"].currentTime = 0;
+        SE["score"].play();
         flag1 = false;
+        result += 1;
+      }
+      if(flag1 && result == 1){
+        if(total >= 0 && total <= 2){
+          SE["zero"].currentTime = 0;
+          SE["zero"].play();
+          flag1 = false;
+        }
+        if(total >= 3 && total <= 5){
+          SE["five"].currentTime = 0;
+          SE["five"].play();
+          flag1 = false;
+        }
+        if(total >= 6 && total <= 8){
+          SE["ten"].currentTime = 0;
+          SE["ten"].play();
+          flag1 = false;
+        }
+        if(total >= 9 && total <= 11){
+          SE["fifteen"].currentTime = 0;
+          SE["fifteen"].play();
+          flag1 = false;
+        }
+        if(total >= 12 && total <= 14){
+          SE["twenty"].currentTime = 0;
+          SE["twenty"].play();
+          flag1 = false;
+        }
+        if(total >= 15 && total <= 17){
+          SE["twentyF"].currentTime = 0;
+          SE["twentyF"].play();
+          flag1 = false;
+        }
+        if(total >=18  && total <= 20){
+          SE["thirty"].currentTime = 0;
+          SE["thirty"].play();
+          flag1 = false;
+        }
+        if(total >= 21 && total <= 23){
+          SE["thirtyF"].currentTime = 0;
+          SE["thirtyF"].play();
+          flag1 = false;
+        }
+        if(total >= 24 && total <= 27){
+          SE["forty"].currentTime = 0;
+          SE["forty"].play();
+          flag1 = false;
+        }
+        if(total >= 28 && total <= 30){
+          SE["fortyF"].currentTime = 0;
+          SE["fortyF"].play();
+          flag1 = false;
+        }
+        if(total >= 31 && total <= 33){
+          SE["fifty"].currentTime = 0;
+          SE["fifty"].play();
+          flag1 = false;
+        }
+        if(total >= 34 && total <= 36){
+          SE["fiftyF"].currentTime = 0;
+          SE["fiftyF"].play();
+          flag1 = false;
+        }
+        if(total >= 37 && total <= 39){
+          SE["sixty"].currentTime = 0;
+          SE["sixty"].play();
+          flag1 = false;
+        }
+        if(total >= 40 && total <= 43){
+          SE["sixtyF"].currentTime = 0;
+          SE["sixtyF"].play();
+          flag1 = false;
+        }
+        if(total >= 44 && total <= 46){
+          SE["seventy"].currentTime = 0;
+          SE["seventy"].play();
+          flag1 = false;
+        }
+        if(total >= 47 && total <= 49){
+          SE["seventyF"].currentTime = 0;
+          SE["seventyF"].play();
+          flag1 = false;
+        }
+        if(total >= 50 && total <= 52){
+          SE["eighty"].currentTime = 0;
+          SE["eighty"].play();
+          flag1 = false;
+        }
+        if(total >= 53 && total <= 55){
+          SE["eightyF"].currentTime = 0;
+          SE["eightyF"].play();
+          flag1 = false;
+        }
+        if(total >= 56 && total <= 59){
+          SE["ninety"].currentTime = 0;
+          SE["ninety"].play();
+          flag1 = false;
+        }
+        if(total >= 60 && total <= 63){
+          SE["ninetyF"].currentTime = 0;
+          SE["ninetyF"].play();
+          flag1 = false;
+        }
+        if(total >= 64 ){
+          SE["hundred"].currentTime = 0;
+          SE["hundred"].play();
+          flag1 = false;
+        }
         result += 1;
       }
       if(flag1 && result == 2){
@@ -715,16 +887,16 @@
       }
       if(flag1 && result == 3){
         if(top_count == 2){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//100点
         }
         if(top_count == 1){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(top_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -737,40 +909,40 @@
       }
       if(flag1 && result == 5){
         if(side_count >= 8){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success8"].currentTime = 0;
+          SE["success8"].play();//100点
         }
         if(side_count == 7){
-          SE["one_miss"].currentTime = 0;
-          SE["one_miss"].play();//50点
+          SE["success7"].currentTime = 0;
+          SE["success7"].play();//50点
         }
         if(side_count == 6){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success6"].currentTime = 0;
+          SE["success6"].play();//50点
         }
         if(side_count == 5){
-          SE["three_miss"].currentTime = 0;
-          SE["three_miss"].play();//50点
+          SE["success5"].currentTime = 0;
+          SE["success5"].play();//50点
         }
         if(side_count == 4){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//50点
         }
         if(side_count == 3){
-          SE["five_miss"].currentTime = 0;
-          SE["five_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(side_count == 2){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(side_count == 1){
-          SE["seven_miss"].currentTime = 0;
-          SE["seven_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(side_count ==0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -783,40 +955,40 @@
       }
       if(flag1 && result == 7){
         if(circle_count >= 8){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success8"].currentTime = 0;
+          SE["success8"].play();//100点
         }
         if(circle_count == 7){
-          SE["one_miss"].currentTime = 0;
-          SE["one_miss"].play();//50点
+          SE["success7"].currentTime = 0;
+          SE["success7"].play();//50点
         }
         if(circle_count == 6){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success6"].currentTime = 0;
+          SE["success6"].play();//50点
         }
         if(circle_count == 5){
-          SE["three_miss"].currentTime = 0;
-          SE["three_miss"].play();//50点
+          SE["success5"].currentTime = 0;
+          SE["success5"].play();//50点
         }
         if(circle_count == 4){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//50点
         }
         if(circle_count == 3){
-          SE["five_miss"].currentTime = 0;
-          SE["five_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(circle_count == 2){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(circle_count == 1){
-          SE["seven_miss"].currentTime = 0;
-          SE["seven_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(circle_count ==0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -829,24 +1001,24 @@
       }
       if(flag1 && result == 9){
         if(X_count >= 4){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//100点
         }
         if(X_count == 3){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(X_count == 2){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(X_count == 1){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(X_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -859,40 +1031,40 @@
       }
       if(flag1 && result == 11){
         if(arms_over >= 8){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success8"].currentTime = 0;
+          SE["success8"].play();//100点
         }
         if(arms_over == 7){
-          SE["one_miss"].currentTime = 0;
-          SE["one_miss"].play();//1ミス
+          SE["success7"].currentTime = 0;
+          SE["success7"].play();//1ミス
         }
         if(arms_over == 6){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//2ミス
+          SE["success6"].currentTime = 0;
+          SE["success6"].play();//2ミス
         }
         if(arms_over == 5){
-          SE["three_miss"].currentTime = 0;
-          SE["three_miss"].play();//3ミス
+          SE["success5"].currentTime = 0;
+          SE["success5"].play();//3ミス
         }
         if(arms_over == 4){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//50点
         }
         if(arms_over == 3){
-          SE["five_miss"].currentTime = 0;
-          SE["five_miss"].play();//5ミス
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//5ミス
         }
         if(arms_over == 2){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//6ミス
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//6ミス
         }
         if(arms_over == 1){
-          SE["seven_miss"].currentTime = 0;
-          SE["seven_miss"].play();//7ミス
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//7ミス
         }
         if(arms_over == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -905,16 +1077,16 @@
       }
       if(flag1 && result == 13){
         if(back_count >= 2){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//100点
         }
         if(back_count == 1){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(back_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -927,24 +1099,24 @@
       }
       if(flag1 && result == 15){
         if(to_lr_count >= 4){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//100点
         }
         if(to_lr_count == 3){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(to_lr_count == 2){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(to_lr_count == 1){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(to_lr_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -957,24 +1129,24 @@
       }
       if(flag1 && result == 17){
         if(up_down_count >= 4){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//100点
         }
         if(up_down_count == 3){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(up_down_count == 2){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(up_down_count == 1){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(up_down_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -987,24 +1159,24 @@
       }
       if(flag1 && result == 19){
         if(chest_count >= 4){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//100点
         }
         if(chest_count == 3){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(chest_count == 2){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(chest_count == 1){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(chest_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -1017,24 +1189,24 @@
       }
       if(flag1 && result == 21){
         if(cycle_count >= 4){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//100点
         }
         if(cycle_count == 3){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(cycle_count == 2){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(cycle_count == 1){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(cycle_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -1047,24 +1219,24 @@
       }
       if(flag1 && result == 23){
         if(jump_count >= 4){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//100点
         }
         if(jump_count == 3){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(jump_count == 2){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(jump_count == 1){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(jump_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -1077,40 +1249,40 @@
       }
       if(flag1 && result == 25){
         if(side_count2 >= 8){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success8"].currentTime = 0;
+          SE["success8"].play();//100点
         }
         if(side_count2 == 7){
-          SE["one_miss"].currentTime = 0;
-          SE["one_miss"].play();//50点
+          SE["success7"].currentTime = 0;
+          SE["success7"].play();//50点
         }
         if(side_count2 == 6){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success6"].currentTime = 0;
+          SE["success6"].play();//50点
         }
         if(side_count2 == 5){
-          SE["three_miss"].currentTime = 0;
-          SE["three_miss"].play();//50点
+          SE["success5"].currentTime = 0;
+          SE["success5"].play();//50点
         }
         if(side_count2 == 4){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//50点
         }
         if(side_count2 == 3){
-          SE["five_miss"].currentTime = 0;
-          SE["five_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(side_count2 == 2){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(side_count2 == 1){
-          SE["seven_miss"].currentTime = 0;
-          SE["seven_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(side_count2 == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
@@ -1123,29 +1295,36 @@
       }
       if(flag1 && result == 27){
         if(breath_count >= 4){
-          SE["hundred"].currentTime = 0;
-          SE["hundred"].play();//100点
+          SE["success4"].currentTime = 0;
+          SE["success4"].play();//100点
         }
         if(breath_count == 3){
-          SE["two_miss"].currentTime = 0;
-          SE["two_miss"].play();//50点
+          SE["success3"].currentTime = 0;
+          SE["success3"].play();//50点
         }
         if(breath_count == 2){
-          SE["fifty"].currentTime = 0;
-          SE["fifty"].play();//50点
+          SE["success2"].currentTime = 0;
+          SE["success2"].play();//50点
         }
         if(breath_count == 1){
-          SE["six_miss"].currentTime = 0;
-          SE["six_miss"].play();//50点
+          SE["success1"].currentTime = 0;
+          SE["success1"].play();//50点
         }
         if(breath_count == 0){
-          SE["zero"].currentTime = 0;
-          SE["zero"].play();//0点
+          SE["success0"].currentTime = 0;
+          SE["success0"].play();//0点
         }
         flag1 = false;
         result += 1;
       }
       if(flag1 && result == 28){
+        SE["otsukare2"].currentTime = 0;
+        SE["otsukare2"].play();
+        flag1 = false;
+        result += 1;
+      }
+      if(flag1 && result == 29){
+        total = 0;
         top_count = 0;
         side_count = 0;
         circle_count = 0;
@@ -1161,7 +1340,7 @@
         breath_count = 0;
         flag1 = false;
         flag_announce = false;
-        result = 1;
+        result = 0;
       }
 
       //変な挙動が怖いなら、countの右端は<にしていいと思う
@@ -1207,9 +1386,12 @@
           top_count += 1;
         }*/
 
+        
+
         if(top && !flag_top){//if(top && training_state == 0 && !flag_top){
           flag_top = true;
           top_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1230,6 +1412,7 @@
         if(side && !flag_side){
           flag_side = true;
           side_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1242,6 +1425,7 @@
         if(circle_top && !flag_top){
           flag_top = true;
           circle_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1256,6 +1440,7 @@
         if(body_X && !flag_X){
           flag_X = true;
           X_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1272,6 +1457,7 @@
         if(right_arm && !flag_arm || left_arm && !flag_arm){
           flag_arm = true;
           arms_over += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1286,6 +1472,7 @@
         if(back && !flag_back){
           flag_back = true;
           back_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1302,6 +1489,7 @@
         if(ro && !flag_lr || lo && !flag_lr){
           flag_lr = true;
           to_lr_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1316,6 +1504,7 @@
         if(up && !flag_up){ //腕をあげて股を開いたら
           flag_up = true;
           up_down_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1334,6 +1523,7 @@
         if(chest && !flag_chest){
           flag_chest = true;
           chest_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1345,6 +1535,7 @@
         if(cycle && !flag_cycle){
           flag_cycle = true;
           cycle_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1363,6 +1554,7 @@
         if(jump && !flag_jump){
           flag_jump = true;
           jump_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1378,6 +1570,7 @@
         if(side && !flag_side2){
           flag_side2 = true;
           side_count2 += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
@@ -1394,6 +1587,7 @@
         if(top && !flag_top2){
           flag_top2 = true;
           breath_count += 1;
+          total += 1;
           SE["OK"].currentTime = 0;
           SE["OK"].play();
         }
