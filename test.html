@@ -291,10 +291,10 @@
       const left_knee = pL[POSE_LANDMARKS.LEFT_KNEE];
       const left_ankle = pL[POSE_LANDMARKS.LEFT_ANKLE];
       
-      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=150)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=150);//腕を伸ばしているかどうか
+      var is_stretch =  (calcAngle(right_shoulder,right_elbow,right_wrist).angle>=140)&&(calcAngle(left_shoulder,left_elbow,left_wrist).angle>=140);//腕を伸ばしているかどうか
       var is_down = (calcAngle(left_hip, left_shoulder, left_elbow).angle <= 40)&&(calcAngle(right_hip, right_shoulder, right_elbow).angle <= 40);
       var legs_stretch = (calcAngle(right_hip, right_knee, right_ankle).angle >= 150)&&(calcAngle(left_hip, left_knee, left_ankle).angle >= 150);
-      var legs_close  = (right_knee.x >= right_hip.x) && (left_knee.x <= left_hip.x);
+      var legs_close  = (right_ankle.x >= right_shoulder.x) && (left_ankle.x <= left_shoulder.x);
       return is_stretch && is_down && legs_stretch && legs_close;
     }
 
